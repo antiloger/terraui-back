@@ -25,7 +25,8 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 	})
 
 	// Database table - [Assumed] : 2 tables with items partiotoned based in users and user_details table to store user data
-	itemTable := awsdynamodb.NewTable(stack, jsii.String("items_store"), &awsdynamodb.TableProps{
+	//add variable to both table in case of need to apply index
+	awsdynamodb.NewTable(stack, jsii.String("items_store"), &awsdynamodb.TableProps{
 		TableName: jsii.String("items_store"),
 		PartitionKey: &awsdynamodb.Attribute{
 			Name: jsii.String("user_id"),
@@ -40,7 +41,7 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 	})
 
 	//Assumed [To Nawodya] : no need to store tenant data as we have limited set of tenants and they are known (like 3-4)
-	usersTable := awsdynamodb.NewTable(stack, jsii.String("user_details"), &awsdynamodb.TableProps{
+	awsdynamodb.NewTable(stack, jsii.String("user_details"), &awsdynamodb.TableProps{
 		TableName: jsii.String("user_details"),
 		PartitionKey: &awsdynamodb.Attribute{
 			Name: jsii.String("tenant_id"),
