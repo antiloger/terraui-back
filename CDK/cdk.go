@@ -20,7 +20,7 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 
 	// S3 bucket
-	bucket := awss3.NewBucket(stack, jsii.String("urlshop_store"), &awss3.BucketProps{
+	awss3.NewBucket(stack, jsii.String("urlshop_StaticStore"), &awss3.BucketProps{
 		RemovalPolicy: awscdk.RemovalPolicy_RETAIN,
 	})
 
@@ -90,11 +90,11 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 
 	// Commansd to be executed on the instance and a user data script to get the executable whenever we reboot the instance
 	userData := "sudo apt-get update && sudo apt-get install -y nginx awscli\n" +
-		"aws s3 cp s3://" + *bucket.BucketName() + "/your-app-binary /usr/local/bin/app-binary\n" +
+		"aws s3 cp s3://" + "urlshopbins" + "/your-app-binary /usr/local/bin/app-binary\n" +
 		"chmod +x /usr/local/bin/app-binary\n" +
 		"echo 'server { listen 80; location / { proxy_pass http://localhost:8080; } }' > /etc/nginx/sites-available/default\n" +
 		"systemctl restart nginx\n" +
-		"echo '@reboot aws s3 cp s3://" + *bucket.BucketName() + "/your-app-binary /usr/local/bin/app-binary' | crontab -\n" +
+		"echo '@reboot aws s3 cp s3://" + "urlshopbins" + "/your-app-binary /usr/local/bin/app-binary' | crontab -\n" +
 		"echo '@reboot chmod +x /usr/local/bin/app-binary' | crontab -\n" +
 		"echo '@reboot systemctl restart app-binary.service' | crontab -\n"
 
