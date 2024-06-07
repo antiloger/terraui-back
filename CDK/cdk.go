@@ -66,12 +66,25 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 	// })
 
 	// EC2 instance
-	vpc := awsec2.NewVpc(stack, jsii.String("VPC"), nil)
+	vpc := awsec2.NewVpc(stack, jsii.String("VPC"), &awsec2.VpcProps{
+		MaxAzs: jsii.Number(2), // Default is all AZs in region
+		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
+			{
+				Name:       jsii.String("PublicSubnet"),
+				SubnetType: awsec2.SubnetType_PUBLIC,
+			},
+			{
+				Name:       jsii.String("PrivateSubnet"),
+				SubnetType: awsec2.SubnetType_PRIVATE_WITH_NAT,
+			},
+		},
+	})
 
 	role := awsiam.NewRole(stack, jsii.String("InstanceRole"), &awsiam.RoleProps{
 		AssumedBy: awsiam.NewServicePrincipal(jsii.String("ec2.amazonaws.com"), nil),
 		ManagedPolicies: &[]awsiam.IManagedPolicy{
 			awsiam.ManagedPolicy_FromAwsManagedPolicyName(jsii.String("AmazonS3FullAccess")),
+			awsiam.ManagedPolicy_FromAwsManagedPolicyName(jsii.String("AmazonSSMManagedInstanceCore")),
 		},
 	})
 
@@ -86,11 +99,14 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 		MachineImage: ubuntuAmi,
 		Vpc:          vpc,
 		Role:         role,
+		VpcSubnets: &awsec2.SubnetSelection{
+			SubnetType: awsec2.SubnetType_PUBLIC,
+		},
 	})
 
 	// Commansd to be executed on the instance and a user data script to get the executable whenever we reboot the instance
 	userData := "sudo apt-get update && sudo apt-get install -y nginx awscli\n" +
-		"aws s3 cp s3://" + "urlshopbins" + "/your-app-binary /usr/local/bin/app-binary\n" +
+		"aws s3 cp s3://" + "urlshopbins" + "/BackBinary /usr/local/bin/BackBinary\n" +
 		"chmod +x /usr/local/bin/app-binary\n" +
 		"echo 'server { listen 80; location / { proxy_pass http://localhost:8080; } }' > /etc/nginx/sites-available/default\n" +
 		"systemctl restart nginx\n" +
