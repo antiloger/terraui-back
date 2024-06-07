@@ -12,6 +12,10 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+type InfrastructureStackProps struct {
+	awscdk.StackProps
+}
+
 func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureStackProps) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 
@@ -77,7 +81,7 @@ func UrlShopStack(scope constructs.Construct, id string, props *InfrastructureSt
 	})
 
 	instance := awsec2.NewInstance(stack, jsii.String("Instance"), &awsec2.InstanceProps{
-		InstanceType: awsec2.InstanceType_Of(jsii.String("t2.micro")),
+		InstanceType: awsec2.InstanceType_Of(awsec2.InstanceClass_T2, awsec2.InstanceSize_MICRO),
 		MachineImage: ubuntuAmi,
 		Vpc:          vpc,
 		Role:         role,
