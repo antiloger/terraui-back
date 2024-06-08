@@ -4,22 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/Terracode-Dev/terraui-back/database"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 )
 
-// fetchUserData fetches user data based on user ID
-func fetchUserDataTST(userID string) (*database.UserData, error) {
-	return &database.UserData{
-		UID:   "123",
-		Uname: "John Doe",
-		Email: "test@mail.com",
-	}, nil
-}
+// var jwtSecret = "N9dnx3hLakwCvns5hY0aEjihuBqtALpBDahXyRRMiS4="
 
-var jwtSecret = "N9dnx3hLakwCvns5hY0aEjihuBqtALpBDahXyRRMiS4="
+//TODO: [Client Siode] -- For both http responmses like unauth and internal server err, check for unauth status (401) or serer error (500) and redirect to login babaa...
 
 func AddAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -37,7 +31,7 @@ func AddAuth(next echo.HandlerFunc) echo.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("Unexpected signing method")
 			}
-			return []byte(jwtSecret), nil
+			return []byte(os.Getenv("JKEY")), nil
 		})
 
 		if err != nil || !token.Valid {

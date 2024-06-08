@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/Terracode-Dev/terraui-back/api"
 	"github.com/Terracode-Dev/terraui-back/database"
@@ -26,9 +27,9 @@ func main() {
 	// if kerr != nil {
 	// 	fmt.Println("Error generating key:", kerr)
 	// }
-	//Generetade key from above : N9dnx3hLakwCvns5hY0aEjihuBqtALpBDahXyRRMiS4= use it in getToken method baby...
+	//Generetade key from above and store in .env adn use it in getToken method baby...
 
-	TK, terr := util.GetToken("1", "1", "N9dnx3hLakwCvns5hY0aEjihuBqtALpBDahXyRRMiS4=")
+	TK, terr := util.GetToken("1", "1", os.Getenv("JKEY"))
 	if terr != nil {
 		fmt.Println("Error generating token:", terr)
 	}

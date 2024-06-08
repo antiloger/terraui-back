@@ -25,7 +25,8 @@ func NewDB(connstr string) DB {
 func (d *DB) Run() {
 }
 
-// ---- dynamoDB codes----
+// ---- dynamoDB Implementations----
+
 var svc *dynamodb.Client
 
 func InitDynamoDBClient() error {
