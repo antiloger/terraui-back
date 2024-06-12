@@ -40,7 +40,7 @@ func (s *Server) UserLogin(c echo.Context) error {
 	cookie.Value = jk
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	c.SetCookie(cookie)
-	return c.JSON(http.StatusAccepted, types.NewResErr("", 0))
+	return c.JSON(http.StatusAccepted, res.Format("", 0))
 }
 
 // : remove this ( created only for auth testing )

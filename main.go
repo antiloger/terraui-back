@@ -36,6 +36,6 @@ func main() {
 	//-------------------------------------------------------------------
 
 	// --- INIT NewServer ---
-	server := api.NewServer(":8044", DB)
+	server := api.NewServer(":8088", DB)
 	server.Run()
 }

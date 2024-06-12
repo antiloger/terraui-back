@@ -14,6 +14,14 @@ type User struct {
 	Subscription string `json:"subscription" dynamodbav:"subscription"`
 }
 
+func (u *User) Format(err string, code int8) *ResErr {
+	return &ResErr{
+		Err:  err,
+		Code: code,
+		Data: u,
+	}
+}
+
 type AuthUser struct {
 	Userid string
 	Role   string
