@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/Terracode-Dev/terraui-back/api"
 	"github.com/Terracode-Dev/terraui-back/database"
-	"github.com/Terracode-Dev/terraui-back/util"
 	"github.com/joho/godotenv"
 )
 
@@ -17,26 +15,27 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	DBerr := database.InitDynamoDBClient()
-	if DBerr != nil {
-		fmt.Println("Error initializing DynamoDB client:", DBerr)
+	// --- INIT DynamoDB client ---
+	DB, err := database.StartDB()
+	if err != nil {
+		fmt.Println("Error initializing DynamoDB client:", err)
 	}
 
-	//TODO: key/token generation for testing Auth -----------------------
+	// TODO: key/token generation for testing Auth -----------------------
 	// key, kerr := util.GenerateSecretKey()
 	// if kerr != nil {
 	// 	fmt.Println("Error generating key:", kerr)
 	// }
-	//Generetade key from above and store in .env adn use it in getToken method baby...
+	// Generetade key from above and store in .env adn use it in getToken method baby...
 
-	TK, terr := util.GetToken("1", "1", os.Getenv("JKEY"))
-	if terr != nil {
-		fmt.Println("Error generating token:", terr)
-	}
-	fmt.Println("Token:", TK)
+	// TK, terr := util.GetToken("1", "1", os.Getenv("JKEY"))
+	// if terr != nil {
+	// 	fmt.Println("Error generating token:", terr)
+	// }
+	// fmt.Println("Token:", TK)
 	//-------------------------------------------------------------------
 
-	server := api.NewServer(":8080")
+	// --- INIT NewServer ---
+	server := api.NewServer(":8088", DB)
 	server.Run()
-
 }

@@ -11,10 +11,11 @@ type Server struct {
 	DB   *database.DB
 }
 
-func NewServer(addr string) Server {
+func NewServer(addr string, db *database.DB) Server {
 	return Server{
 		Addr: addr,
 		Echo: echo.New(),
+		DB:   db,
 	}
 }
 
