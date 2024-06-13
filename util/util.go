@@ -8,6 +8,7 @@ import (
 
 	"github.com/Terracode-Dev/terraui-back/types"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,7 +24,7 @@ func UKGen(s string) string {
 	return "uk12iu12"
 }
 
-func UKcheck(id string, time int64, key string) bool {
+func UKcheck(id string, time float64, key string) bool {
 	return true
 }
 
@@ -50,4 +51,9 @@ func GetToken(user *types.User) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+func NewUUID() string {
+	id := uuid.New()
+	return id.String()
 }

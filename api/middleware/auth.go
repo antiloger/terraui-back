@@ -39,8 +39,9 @@ func AddAuth(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		uid := (*claims)["userid"].(string)
+		fmt.Println(uid)
 
-		if util.UKcheck(uid, (*claims)["exp"].(int64), (*claims)["uk"].(string)) {
+		if !(util.UKcheck(uid, (*claims)["exp"].(float64), (*claims)["uk"].(string))) {
 			return echo.NewHTTPError(http.StatusUnauthorized, "login again")
 		}
 

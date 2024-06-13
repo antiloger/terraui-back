@@ -52,11 +52,11 @@ func (db *DB) CheckUser(user *apitypes.UserLogin) (*apitypes.User, error) {
 			":t": &types.AttributeValueMemberS{Value: user.Tenant},
 			":p": &types.AttributeValueMemberS{Value: user.Password}, // TODO: add hash
 		},
-		ProjectionExpression: aws.String("user_id, #role, #subscription, #useremail, #username"),
+		ProjectionExpression: aws.String("user_id, #role, #subscription, #tenant_id, #username"),
 		ExpressionAttributeNames: map[string]string{
 			"#role":         "role",
 			"#subscription": "subscription",
-			"#useremail":    "useremail",
+			"#tenant_id":    "tenant_id",
 			"#username":     "username",
 		},
 	}
@@ -80,6 +80,69 @@ func (db *DB) CheckUser(user *apitypes.UserLogin) (*apitypes.User, error) {
 	}
 
 	return u, nil
+}
+
+// func (db *DB) CreateUser() error {
+// }
+
+func (db *DB) GetAllUserTables(userid string) (*[]apitypes.TableInfo, error) {
+	iquery := &dynamodb.QueryInput{
+		TableName:              aws.String("users_tables"),
+		KeyConditionExpression: aws.String("user_id = :i"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":i": &types.AttributeValueMemberS{Value: userid},
+		},
+		// ProjectionExpression: aws.String("user_id, #tablename, #discription, #lastdate, #color, #columns"),
+		// ExpressionAttributeNames: map[string]string{
+		//   "#tablename": "tablename",
+		//   "#discription": "discription",
+		//   "#lastdate": "lastdate",
+		//   "#color": "color",
+		//   "#columns": "columns",
+		// },
+	}
+
+	result, err := db.Conn.Query(context.TODO(), iquery)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Items) == 0 {
+		return nil, apierror.ErrZeroData
+	}
+	fmt.Println(result.Items)
+	info := new([]apitypes.TableInfo)
+
+	err = attributevalue.UnmarshalListOfMaps(result.Items, info)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return info, nil
+}
+
+func (db *DB) GetAllItem(tableid string) (*[]map[string]any, error) {
+	iquery := &dynamodb.QueryInput{
+		TableName:              aws.String("items_store"),
+		KeyConditionExpression: aws.String("user_id = :i"), // TODO: change this "user_id"
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":i": &types.AttributeValueMemberS{Value: tableid},
+		},
+	}
+
+	result, err := db.Conn.Query(context.TODO(), iquery)
+	if err != nil {
+		return nil, err
+	}
+
+	info := new([]map[string]any)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, info)
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
 
 // func (db *DB) FetchUserData(userID string, tenantID string) (*UserData, error) {
