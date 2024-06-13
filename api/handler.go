@@ -43,6 +43,22 @@ func (s *Server) UserLogin(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, res.Format("", 0))
 }
 
+func (s *Server) GetAllTables(c echo.Context) error {
+	user, ok := c.Get("Auth").(*types.AuthUser)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, types.NewResErr("Authantication Failed", 91))
+	}
+	set, err := s.DB.GetAllUserTables(user.Userid)
+	if err != nil {
+		if errors.Is(err, apierror.ErrZeroData) {
+			return c.JSON(http.StatusAccepted, types.NewResErr("No Table found for this user", 21))
+		}
+		return err
+	}
+
+	return c.JSON(http.StatusOK, types.NewUserTables(user.Userid, set).Format())
+}
+
 // : remove this ( created only for auth testing )
 // func TestAuth(c echo.Context) error {
 // 	user, ok := c.Get("user").(*database.UserData)

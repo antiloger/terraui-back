@@ -8,7 +8,7 @@ type UserLogin struct {
 
 type User struct {
 	Userid       string `json:"user_id" dynamodbav:"user_id"`
-	Useremail    string `json:"useremail" dynamodbav:"useremail"`
+	Useremail    string `json:"useremail" dynamodbav:"tenant_id"` // TODO: change
 	Username     string `json:"username" dynamodbav:"username"`
 	Userrole     string `json:"role" dynamodbav:"role"`
 	Subscription string `json:"subscription" dynamodbav:"subscription"`
@@ -22,6 +22,10 @@ func (u *User) Format(err string, code int8) *ResErr {
 	}
 }
 
+type GetAllTableRes struct {
+	User_id string `json:"user_id"`
+}
+
 type AuthUser struct {
 	Userid string
 	Role   string
@@ -33,6 +37,13 @@ type UserTables struct {
 	Tabledata []TableInfo `json:"tabledata"`
 }
 
+func NewUserTables(user_id string, info *[]TableInfo) *UserTables {
+	return &UserTables{
+		Userid:    user_id,
+		Tabledata: *info,
+	}
+}
+
 func (u *UserTables) Format() *ResErr {
 	return &ResErr{
 		Err:  "",
@@ -42,10 +53,12 @@ func (u *UserTables) Format() *ResErr {
 }
 
 type TableInfo struct {
-	TableID     string `json:"tableid"`
-	TableName   string `json:"tablename"`
-	Discription string `json:"tablediscription"`
-	LastUpdate  int64  `json:"lastupdate"`
+	TableID     string            `json:"tableid" dynamodbav:"table_id"`
+	TableName   string            `json:"tablename" dynamodbav:"tablename"`
+	Discription string            `json:"tablediscription" dynamodbav:"discription"`
+	LastUpdate  int64             `json:"lastupdate" dynamodbav:"lastdate"`
+	Color       string            `json:"color" dynamodbav:"color"`
+	Columns     map[string]string `json:"Column" dynamodbav:"Column"`
 }
 
 type DataFormat interface {
