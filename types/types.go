@@ -1,9 +1,36 @@
 package types
 
+type DataFormat interface {
+	Format() *ResErr
+}
+
+// ------------this is the response template ----------------
+type ResErr struct {
+	Err  string      `json:"err"`
+	Code int8        `json:"code"`
+	Data interface{} `json:"data"`
+}
+
+func NewResErr(e string, c int8) ResErr {
+	return ResErr{
+		Err:  e,
+		Code: c,
+	}
+}
+
+//------------END: this is the response template ----------------
+
 type UserLogin struct {
-	Tenant   string `json:"tenant_id" dynamodbav:"tenant_id"`
-	Userid   string `json:"user_id" dynamodbav:"user_id"`
+	Tenant   string `json:"user_email" dynamodbav:"tenant_id"`
 	Password string `json:"userkey" dynamodbav:"user_key"`
+}
+
+type UserRegister struct {
+	Useremail string `json:"user_email" dynamodbav:"tenant_id"`
+	Userid    string `json:"user_id" dynamodbav:"user_id"`
+	Username  string `json:"username" dynamodbav:"username"`
+	Role      string `json:"role" dynamodbav:"role"`
+	Userkey   string `json:"userkey" dynamodbav:"userkey"`
 }
 
 type User struct {
@@ -12,6 +39,7 @@ type User struct {
 	Username     string `json:"username" dynamodbav:"username"`
 	Userrole     string `json:"role" dynamodbav:"role"`
 	Subscription string `json:"subscription" dynamodbav:"subscription"`
+	Userkey      string `json:"userkey" dynamodbav:"userkey"`
 }
 
 func (u *User) Format(err string, code int8) *ResErr {
@@ -24,6 +52,10 @@ func (u *User) Format(err string, code int8) *ResErr {
 
 type GetAllTableRes struct {
 	User_id string `json:"user_id"`
+}
+
+type GetAllItemRes struct {
+	Table_id string `json:"table_id"`
 }
 
 type AuthUser struct {
@@ -61,19 +93,22 @@ type TableInfo struct {
 	Columns     map[string]string `json:"Column" dynamodbav:"Column"`
 }
 
-type DataFormat interface {
-	Format() *ResErr
+type TableItems struct {
+	Tableinfo *TableInfo        `json:"tabeleinfo"`
+	Tabledata *[]map[string]any `json:"tabledata"`
 }
 
-type ResErr struct {
-	Err  string      `json:"err"`
-	Code int8        `json:"code"`
-	Data interface{} `json:"data"`
+func NewTableItems(i *TableInfo, d *[]map[string]any) *TableItems {
+	return &TableItems{
+		Tableinfo: i,
+		Tabledata: d,
+	}
 }
 
-func NewResErr(e string, c int8) ResErr {
-	return ResErr{
+func (d *TableItems) Format(e string, c int8) *ResErr {
+	return &ResErr{
 		Err:  e,
 		Code: c,
+		Data: d,
 	}
 }

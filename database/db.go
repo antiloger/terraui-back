@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/labstack/gommon/log"
 
 	apitypes "github.com/Terracode-Dev/terraui-back/types"
 	apierror "github.com/Terracode-Dev/terraui-back/util/apierrors"
@@ -45,24 +46,23 @@ func InitDynamoDBClient() (*dynamodb.Client, error) {
 func (db *DB) CheckUser(user *apitypes.UserLogin) (*apitypes.User, error) {
 	iquery := &dynamodb.QueryInput{
 		TableName:              aws.String("user_details"),
-		KeyConditionExpression: aws.String("user_id = :e AND tenant_id = :t"),
-		FilterExpression:       aws.String("userkey = :p"),
+		KeyConditionExpression: aws.String("tenant_id = :t"),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":e": &types.AttributeValueMemberS{Value: user.Userid},
 			":t": &types.AttributeValueMemberS{Value: user.Tenant},
-			":p": &types.AttributeValueMemberS{Value: user.Password}, // TODO: add hash
 		},
-		ProjectionExpression: aws.String("user_id, #role, #subscription, #tenant_id, #username"),
+		ProjectionExpression: aws.String("user_id, #role, #subscription, #userkey, #tenant_id, #username"),
 		ExpressionAttributeNames: map[string]string{
 			"#role":         "role",
 			"#subscription": "subscription",
 			"#tenant_id":    "tenant_id",
 			"#username":     "username",
+			"#userkey":      "userkey",
 		},
 	}
 
 	result, err := db.Conn.Query(context.TODO(), iquery)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
@@ -73,17 +73,38 @@ func (db *DB) CheckUser(user *apitypes.UserLogin) (*apitypes.User, error) {
 		return nil, apierror.ErrAuthFail
 	}
 
-	fmt.Println("lol")
 	err = attributevalue.UnmarshalMap(result.Items[0], u)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(u.Userkey)
 
 	return u, nil
 }
 
-// func (db *DB) CreateUser() error {
-// }
+// to create user
+func (db *DB) CreateUser(u *apitypes.UserRegister) error {
+	user, err := attributevalue.MarshalMap(u)
+	if err != nil {
+		log.Printf("\n %s \n", err)
+		return err
+	}
+
+	iquery := &dynamodb.PutItemInput{
+		TableName: aws.String("user_details"),
+		Item:      user,
+	}
+
+	output, err := db.Conn.PutItem(context.TODO(), iquery)
+	if err != nil {
+		fmt.Println("ttt")
+		log.Printf("\n %s \n", err)
+		return err
+	}
+
+	fmt.Println(output)
+	return nil
+}
 
 func (db *DB) GetAllUserTables(userid string) (*[]apitypes.TableInfo, error) {
 	iquery := &dynamodb.QueryInput{
@@ -122,6 +143,36 @@ func (db *DB) GetAllUserTables(userid string) (*[]apitypes.TableInfo, error) {
 	return info, nil
 }
 
+func (db *DB) CheckItems(userid string, tableid string) (*apitypes.TableInfo, error) {
+	fmt.Println(userid, tableid)
+	iquery := &dynamodb.QueryInput{
+		TableName:              aws.String("users_tables"),
+		KeyConditionExpression: aws.String("user_id = :i AND table_id = :t"), // TODO: change this "user_id"
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":i": &types.AttributeValueMemberS{Value: userid},
+			":t": &types.AttributeValueMemberS{Value: tableid},
+		},
+	}
+
+	result, err := db.Conn.Query(context.TODO(), iquery)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(result)
+
+	if len(result.Items) == 0 {
+		return nil, apierror.ErrZeroData
+	}
+	info := new(apitypes.TableInfo)
+	err = attributevalue.UnmarshalMap(result.Items[0], info)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return info, nil
+}
+
 func (db *DB) GetAllItem(tableid string) (*[]map[string]any, error) {
 	iquery := &dynamodb.QueryInput{
 		TableName:              aws.String("items_store"),
@@ -144,36 +195,3 @@ func (db *DB) GetAllItem(tableid string) (*[]map[string]any, error) {
 
 	return info, nil
 }
-
-// func (db *DB) FetchUserData(userID string, tenantID string) (*UserData, error) {
-// 	var userData UserData
-//
-// 	// Set up the query input parameters
-// 	SQRY := &dynamodb.QueryInput{
-// 		TableName:              aws.String("user_details"),
-// 		KeyConditionExpression: aws.String("user_id = :user_id AND tenant_id = :tenant_id"),
-// 		ExpressionAttributeValues: map[string]types.AttributeValue{
-// 			":user_id":   &types.AttributeValueMemberS{Value: userID},
-// 			":tenant_id": &types.AttributeValueMemberS{Value: *aws.String(tenantID)},
-// 		},
-// 	}
-//
-// 	// Execute the query
-// 	result, err := db.Conn.Query(context.TODO(), SQRY)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to query DynamoDB, %w", err)
-// 	}
-//
-// 	// Check if we got any items
-// 	if len(result.Items) == 0 {
-// 		return nil, fmt.Errorf("no items found")
-// 	}
-//
-// 	// Deserialize the first item (assuming the user ID is unique)
-// 	err = attributevalue.UnmarshalMap(result.Items[0], &userData)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to unmarshal data, %w", err)
-// 	}
-//
-// 	return &userData, nil
-// }

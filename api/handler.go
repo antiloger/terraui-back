@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -21,13 +20,16 @@ func (s *Server) UserLogin(c echo.Context) error {
 	if err := c.Bind(ul); err != nil {
 		return err
 	}
-	fmt.Println("test")
 	res, err := s.DB.CheckUser(ul)
 	if err != nil {
 		if errors.Is(err, apierror.ErrAuthFail) {
-			return c.JSON(http.StatusUnauthorized, types.NewResErr("Invalid password or user email", 9))
+			return c.JSON(http.StatusUnauthorized, types.NewResErr("Invalid user email", 98))
 		}
 		return c.JSON(http.StatusInternalServerError, types.NewResErr("Internal server issue", 91))
+	}
+
+	if !(util.HashCheck(ul.Password, res.Userkey)) {
+		return c.JSON(http.StatusUnauthorized, types.NewResErr("Invalid password", 9))
 	}
 
 	//---set cookies---
@@ -40,7 +42,7 @@ func (s *Server) UserLogin(c echo.Context) error {
 	cookie.Value = jk
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	c.SetCookie(cookie)
-	return c.JSON(http.StatusAccepted, res.Format("", 0))
+	return c.JSON(http.StatusAccepted, types.NewResErr("StatusAccepted", 12))
 }
 
 func (s *Server) GetAllTables(c echo.Context) error {
@@ -59,6 +61,62 @@ func (s *Server) GetAllTables(c echo.Context) error {
 	return c.JSON(http.StatusOK, types.NewUserTables(user.Userid, set).Format())
 }
 
+func (s *Server) GetAllItems(c echo.Context) error {
+	t := new(types.GetAllItemRes)
+	if err := c.Bind(t); err != nil {
+		return err
+	}
+	user, ok := c.Get("Auth").(*types.AuthUser)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, types.NewResErr("Authantication Failed", 92))
+	}
+
+	tableinfo, err := s.DB.CheckItems(user.Userid, t.Table_id)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, types.NewResErr("Authantication Failed", 91))
+	}
+
+	tabledata, err := s.DB.GetAllItem(t.Table_id)
+	if err != nil {
+		return c.JSON(http.StatusAccepted, types.NewResErr("empty", 12))
+	}
+
+	tableitem := types.NewTableItems(tableinfo, tabledata)
+
+	return c.JSON(http.StatusOK, tableitem.Format("table item", 0))
+}
+
+func (s *Server) UserRegister(c echo.Context) error {
+	u := new(types.UserRegister)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	u.Userid = util.NewUUID()
+	u.Role = "user"
+	key, err := util.HashKey(u.Userkey)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, types.NewResErr("Internal Server error", 99))
+	}
+	u.Userkey = key
+
+	err = s.DB.CreateUser(u)
+	if err != nil {
+		return nil
+	}
+
+	return c.JSON(http.StatusCreated, types.NewResErr("user created", 11))
+}
+
+func (s *Server) GetItem(c echo.Context) error
+func (s *Server) GetUserData(c echo.Context) error
+func (s *Server) LinkGenarator(c echo.Context) error
+func (s *Server) DeleteTable(c echo.Context) error
+func (s *Server) DeleteItem(c echo.Context) error
+func (s *Server) UpdateTable(c echo.Context) error
+func (s *Server) UpdateItem(c echo.Context) error
+func (s *Server) PaymentData(c echo.Context) error
+func (s *Server) OrderData(c echo.Context) error
+
 // : remove this ( created only for auth testing )
 // func TestAuth(c echo.Context) error {
 // 	user, ok := c.Get("user").(*database.UserData)
@@ -68,4 +126,4 @@ func (s *Server) GetAllTables(c echo.Context) error {
 // 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid user data")
 // 	}
 // 	return c.String(http.StatusOK, "Hello, "+user.Uname+"!")
-// }
+//
